@@ -5,17 +5,17 @@
       <div
         v-for="(rec, index) in recommendations"
         :key="rec.filename"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 p-4 h-100 flex flex-col"
+        class="bg-white rounded-lg shadow-md hover:shadow-lg p-4 h-100 flex flex-col"
       >
         <!-- Image Container with fixed height -->
-        <a :href="rec.url" target="_blank" class="block h-60">   <!-- edit image Container height -->
+        <a :href="rec.url" target="_blank" class="block h-60">
           <img
-            :src="rec.image_url" 
+            :src="processImageUrl(rec.image_url)"
             alt="Recommended Image"
             class="w-full h-full object-cover rounded-md"
+            crossorigin="anonymous"
           />
         </a>
-
         <!-- Metadata displayed in the desired order -->
         <div class="mt-2 text-center flex-grow flex flex-col justify-center">
           <p class="font-semibold text-gray-800">{{ rec.filename }}</p>
@@ -28,7 +28,6 @@
     </div>
   </div>
 </template>
-
 <script>
 export default {
   props: {
@@ -36,6 +35,28 @@ export default {
       type: Array,
       default: () => [],
     },
+    backendUrl: {
+      type: String,
+      default: () => 'http://127.0.0.1:8080'
+    }
   },
+  methods: {
+    processImageUrl(url) {
+      if (!url) return '';
+      
+      // Skip if already proxied
+      if (url.includes('/proxy-image')) return url;
+      
+      // Skip local URLs
+      if (url.includes('127.0.0.1') || url.includes('localhost')) return url;
+      
+      // Proxy external URLs
+      if (url.startsWith('http')) {
+        return `${this.backendUrl}/proxy-image?url=${encodeURIComponent(url)}`;
+      }
+      
+      return url;
+    }
+  }
 };
 </script>
