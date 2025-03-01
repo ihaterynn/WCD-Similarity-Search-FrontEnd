@@ -28,7 +28,12 @@
           <div v-if="uploadedFile || imageFromFilename" class="mt-6 text-black">
             <p class="text-lg font-semibold mb-3"><strong>Input Design:</strong></p>
             <div class="h-48 w-full overflow-hidden border border-gray-300 rounded-md relative">
-              <img :src="uploadedFile || imageFromFilename" alt="Uploaded Image" class="w-full h-full object-cover" />
+              <img 
+                :src="uploadedFile || imageFromFilename" 
+                alt="Uploaded Image" 
+                class="w-full h-full object-cover"
+                crossorigin="anonymous" 
+              />
               <button
                 v-if="uploadedFile"
                 @click="openCropper"
@@ -45,18 +50,14 @@
     <div class="p-6 bg-green-50">
       <h2 class="font-bold text-gray-800 mb-5 text-center" style="font-size: 30px;">Recommended For You</h2>
 
-      <!-- "Generate PDF" Button -->
-      <div class="text-center mb-4">
-        <button
-          @click="generatePDF"
-          class="bg-blue-500 text-white px-4 py-2 rounded-md"
-        >
-          Export to PDF
-        </button>
-      </div>
-
       <!-- Recommendation List -->
-      <RecommendationList :recommendations="recommendations" />
+      <RecommendationList 
+        :recommendations="recommendations" 
+        :backendUrl="backendUrl"
+      />
+      
+      <!-- Export to PDF component -->
+      <ExportToPDF :recommendations="recommendations" />
     </div>
 
     <!-- Image Cropper Modal -->
@@ -76,6 +77,7 @@ import FileUpload from "./components/FileUpload.vue";
 import RecommendationList from "./components/RecommendationList.vue";
 import ProductNameInput from "./components/ProductNameInput.vue";
 import ImageCropper from "./components/ImageCropper.vue";
+import ExportToPDF from "./components/ExportToPDF.vue";
 import bgImage from "@/assets/bg1.jpg";
 
 export default {
@@ -83,7 +85,8 @@ export default {
     FileUpload,
     RecommendationList,
     ProductNameInput,
-    ImageCropper
+    ImageCropper,
+    ExportToPDF
   },
   data() {
     return {
@@ -137,27 +140,41 @@ export default {
       } else if (this.sortCriteria === 'inventory') {
         this.recommendations.sort((a, b) => b.inventory_count - a.inventory_count);
       }
-    },
-    async generatePDF() {
-      try {
-        const response = await axios.post(
-          `${this.backendUrl}/generate-pdf`, 
-          {},
-          { responseType: "blob" }
-        );
-        const blobUrl = URL.createObjectURL(response.data);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.setAttribute("download", "recommendations.pdf");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      } catch (error) {
-        console.error("Failed to generate PDF", error);
-        alert("Error generating PDF. See console for details.");
-      }
     }
   },
 };
 </script>
+
+<style>
+/* Add this for proper PDF generation */
+@media print {
+  #content-to-export {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Fix for Tailwind height class */
+  div[class*="h-[70vh]"] {
+    height: auto !important;
+  }
+  
+  /* Hide elements not needed in PDF */
+  button, select, input, form {
+    display: none !important;
+  }
+  
+  /* Ensure images are visible */
+  img {
+    display: block !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+</style>
